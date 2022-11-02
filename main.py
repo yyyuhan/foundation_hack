@@ -6,6 +6,8 @@ from src.training.trainer import Trainer
 import torch
 import math
 
+from src.utils.comm_util import get_device
+
 def parse_cmd_args():
     arg_parser = common_arg_parser()
     args_ns, extra_args_list = arg_parser.parse_known_args()
@@ -17,6 +19,7 @@ if __name__ == "__main__":
     # parse cmd-line args
     comm_args, extra_args = parse_cmd_args()
 
+    device = get_device()
     task = comm_args.task
     warmup_steps = comm_args.warmup_steps
     total_steps = comm_args.num_steps_per_iter * comm_args.max_iters

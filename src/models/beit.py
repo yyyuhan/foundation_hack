@@ -10,7 +10,7 @@ class ImageBeit(nn.Module):
         self.fc1 = nn.Linear(768, 512)
         self.fc2 = nn.Linear(512, num_actions)
 
-        self.loss_fn = nn.MSELoss()
+        self.loss_fn = nn.CrossEntropyLoss()
 
         self.beit_feature_extractor = BeitFeatureExtractor.from_pretrained("microsoft/beit-base-patch16-224-pt22k")
         self.beit_model = BeitModel.from_pretrained("microsoft/beit-base-patch16-224-pt22k")
