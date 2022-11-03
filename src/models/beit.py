@@ -34,3 +34,6 @@ class ImageBeit(nn.Module):
     def loss_on_batch(self, real_batch, pred_batch):
         loss = self.loss_fn(real_batch, pred_batch)
         return loss
+
+    def load_checkpoint(self, model_path):
+        self.load_state_dict(state_dict=torch.load(model_path))

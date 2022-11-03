@@ -19,14 +19,17 @@ class GameName(str, Enum):
     ATARI_MSPACMAN = "mspacman"
 
 
+SET = {GameName.ATARI_MSPACMAN: GameInfo("ALE/MsPacman-v5", 18)}
+
+
 class GameSet:
-    SET = {GameName.ATARI_MSPACMAN: GameInfo("ALE/MsPacman-v5", 18)}
+    @staticmethod
+    def env_id(game):
+        return SET[game].env_id
 
-    def get_env_id(self, game):
-        return self.SET[game]["env_id"]
-
-    def get_action_space_dim(self, game):
-        return self.SET[game]["action_space"]
+    @staticmethod
+    def action_space_dim(game):
+        return SET[game].action_space
 
 
 class Constants(int, Enum):

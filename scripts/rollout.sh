@@ -1,0 +1,1 @@
+python main.py --task rollout --model checkpoints/bc_900.pt

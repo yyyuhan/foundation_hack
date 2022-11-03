@@ -3,7 +3,7 @@ import time
 import torch
 from tqdm import tqdm
 
-from src.utils.comm_util import load_checkpoint, save_checkpoint
+from src.utils.comm_util import save_checkpoint
 from src.utils.types import Constants
 
 
@@ -79,9 +79,10 @@ class Trainer:
         return loss_ep
 
     def pred_action(self, state):
-        logits = self.model([state])
+        state = torch.from_numpy(state.transpose(2, 0, 1))
+        logits = self.model([state.to(self.device)])
         preds = torch.argmax(logits, dim=-1)
-        return preds
+        return preds.item()
 
     # Do a training iteration:
     # 1) Evaluate the model through the pre-supplied eval functions.

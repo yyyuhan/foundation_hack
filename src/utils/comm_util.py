@@ -26,8 +26,10 @@ def save_checkpoint(model, name, path_to_save="checkpoints"):
     save(raw_model.state_dict(), f"{path_to_save}/{name}.pt")
 
 
-def load_checkpoint(model_path):
-    from torch import load, load_state_dict
+# def load_checkpoint(model, model_path):
+#     from torch import load
+#     import torch.nn as nn
 
-    model_path = model_path + ".pt"
-    return load_state_dict(load(model_path))
+#     model_path = model_path + ".pt"
+#     print(type(load(model_path)))
+#     model.load_state_dict(state_dict=load(model_path))

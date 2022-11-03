@@ -1,9 +1,11 @@
 import gym
 
+from src.utils.types import GameSet
+
 
 # pip install gym[accept-rom-license]
-class AtariEnv(gym.Env):
+class AtariEnv(gym.Wrapper):
     def __init__(self, game=""):
-        # TODO game -> gym env
-        self.env = gym.make("ALE/MsPacman-v5", full_action_space=True)
-        # super().__init__(self.env)
+        env_id = GameSet.env_id(game)
+        self.env = gym.make(env_id, full_action_space=True)
+        super().__init__(self.env)

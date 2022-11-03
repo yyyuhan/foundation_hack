@@ -3,13 +3,13 @@ from tests.test_dataloader import DATA_DIR
 from src.pipeline.load_atari import MspacmanDataProvider
 from src.models.beit import ImageBeit
 from src.utils.cmd_util import common_arg_parser, parse_cmdline_kwargs
-from src.utils.types import ErrMsg, GameName
+from src.utils.types import ErrMsg, GameName, GameSet
 from src.training.trainer import Trainer
 
 import torch
 import math
 
-from src.utils.comm_util import get_device, load_checkpoint
+from src.utils.comm_util import get_device
 
 def parse_cmd_args():
     arg_parser = common_arg_parser()
@@ -28,6 +28,8 @@ if __name__ == "__main__":
     total_steps = comm_args.num_steps_per_iter * comm_args.max_iters
     batch_size = comm_args.batch_size
     checkpoint = comm_args.model
+    action_space_dim = GameSet.action_space_dim(game=GameName.ATARI_MSPACMAN)
+
     def lr_warmup_decay(steps):
         if steps < warmup_steps:
             # linear warmup
@@ -40,7 +42,7 @@ if __name__ == "__main__":
 
     if "train" == task:
         # prepare model
-        model = ImageBeit(num_actions=18, device=device) # TODO dataset
+        model = ImageBeit(num_actions=action_space_dim, device=device)
         # prepare optimizer
         optimizer = torch.optim.AdamW(model.parameters(), lr=comm_args.learning_rate, weight_decay=comm_args.weight_decay)
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_warmup_decay)
@@ -55,14 +57,18 @@ if __name__ == "__main__":
         if not checkpoint:
             raise ValueError(f"invalid checkpoint param for rollout task")
         # load model
-        model = load_checkpoint(model_path=checkpoint)
-        trainer = Trainer(model=model)
-        env = AtariEnv()
-        state = env.reset()
-        for s in comm_args.total_steps:
-            action = trainer.pred_action()
-            state, _, _, _ = env.step(action)
-        
+        model = ImageBeit(num_actions=action_space_dim, device=device)
+        model.load_checkpoint(model_path=comm_args.model)
+        trainer = Trainer(model=model, device=device)
+        env = AtariEnv(game=GameName.ATARI_MSPACMAN)
+        state, _ = env.reset()
+        import matplotlib.pyplot as plt
+        for s in range(total_steps):
+            action = trainer.pred_action(state)
+            state, _, done, _, _ = env.step(action)
+            env.render('rgb_array')
+
+
     elif "eval" == task:
         pass
     else:
