@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import Enum
 
 
 class ErrMsg(str, Enum):
@@ -10,3 +10,7 @@ class ErrMsg(str, Enum):
     ForkFailure = "Fork failed"
     InitFailure = "Initialization failed"
     InvalidResponse = "Invalid response"
+
+
+class GameName(str, Enum):
+    ATARI_MSPACMAN = "mspacman"

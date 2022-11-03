@@ -1,36 +1,37 @@
 import time
 
-from tqdm import tqdm
 import torch
+from tqdm import tqdm
+
 from src.utils.comm_util import get_device
 
 
 class Trainer:
-    def __init__(self,
-        model,
-        optimizer,
-        batch_size,
-        training_data_provider,
-        validation_data_provider,
-        lr_scheduler=None,
-        eval_fns=[]):
+    def __init__(
+        self, model, optimizer, batch_size, training_data_provider, validation_data_provider=None, lr_scheduler=None, eval_fns=[]
+    ):
+        self.device = get_device()
         self.model = model
         self.optim = optimizer
+        self.batch_size = batch_size
         self.training_data_provider = training_data_provider
         self.lr_scheduler = lr_scheduler
-        self.device = get_device()
 
     def train(self, n_iters):
         begin_time = time.perf_counter()
         results_iter = {}
 
         for iter in range(n_iters):
-            print(f'***iteration {iter}')
+            print(f"***iteration {iter}")
             state_batch, action_batch = self.training_data_provider.get_batch()
-            self.model.train() # training mode
+            # state_batch, action_batch = state_batch.to(self.device), action_batch.to(self.device)
+            # required by BEiT: we must pass list[tensor] as input
+            state_batch = [state for state in state_batch[:]]
+            # action_batch = action_batch.to(self.device)
+            self.model.train()  # training mode
             batch = (state_batch, action_batch)
             loss_ep = self.train_iteration(batch)
-            results_iter[iter] = loss_ep
+            results_iter[iter] = loss_ep.detach().cpu().item()
             print(f"loss: {results_iter}")
 
         dur = time.perf_counter() - begin_time
@@ -41,8 +42,8 @@ class Trainer:
 
         self.optim.zero_grad()
         state_batch, real_action_batch = batch
-        pred_action_batch = self.model(**state_batch) # feed the state batch into our model
-        loss = self.model.loss_on_batch(real_action_batch, pred_action_batch)
+        pred_action_batch = self.model(state_batch)  # feed the state batch into our model
+        loss = self.model.loss_on_batch(pred_action_batch, real_action_batch)
         self.optim.zero_grad()
         loss.backward()
         # update parameters
@@ -53,16 +54,16 @@ class Trainer:
         dur = time.perf_counter() - begin_time
         print(f"***iteration timecost: {dur}")
         return loss
-    
+
     def train_epoch(self, batches):
         pbar = tqdm(batches)
         loss_ep, n_batch = 0, 0
         for x_batch, y_batch in pbar:
-            x_batch = x_batch.type(torch.FloatTensor).to(self.device) # TODO type?
+            x_batch = x_batch.type(torch.FloatTensor).to(self.device)  # TODO type?
             y_batch = y_batch.type(torch.FloatTensor).to(self.device)
             loss = self.train_iteration((x_batch, y_batch))
-            loss_ep+=loss.detach().item()
-            n_batch+=1
+            loss_ep += loss.detach().item()
+            n_batch += 1
             pbar.set_description(f"train loss: {loss_ep/n_batch:.4f}")
         return loss_ep
 
@@ -143,4 +144,3 @@ class Trainer:
     #     for k, v in logs.items():
     #         mlflow.log_metric(k, v)
     #     print("=" * 80)
-

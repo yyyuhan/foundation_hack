@@ -19,7 +19,7 @@ class ImageBeit(nn.Module):
         # x: a list of tensor (3*H*W)
         x = self.beit_feature_extractor(x, return_tensors="pt")
         with torch.no_grad():
-            x = self.beit_model(**x)  # the size is always (b*197*768)
+            x = self.beit_model(**x).last_hidden_state  # the size is always (b*197*768)
         x = x[
             :, 0, :
         ]  # (b*768) for each image inside the batch, select the vector in position 0 as a representation of the image.

@@ -1,9 +1,10 @@
-
 from src.utils.comm_util import find_traj_frame_ids, get_device
+
 
 # pytest -s tests/test_utils.py::test_get_device
 def test_get_device():
     print(get_device())
+
 
 # pytest -s tests/test_utils.py::test_find_traj_frame_ids
 def test_find_traj_frame_ids():

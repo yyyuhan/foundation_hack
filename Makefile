@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-LINT_PATHS=src/
+LINT_PATHS=src/ tests/
 
 lint:
 	flake8 ${LINT_PATHS} --count --exit-zero --statistics --max-line-length 127 --ignore=W503,W504,E203,E231

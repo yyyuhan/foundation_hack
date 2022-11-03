@@ -1,6 +1,8 @@
+from tests.test_dataloader import DATA_DIR
+from src.pipeline.load_atari import MspacmanDataProvider
 from src.models.beit import ImageBeit
 from src.utils.cmd_util import common_arg_parser, parse_cmdline_kwargs
-from src.utils.types import ErrMsg
+from src.utils.types import ErrMsg, GameName
 from src.training.trainer import Trainer
 
 import torch
@@ -23,6 +25,7 @@ if __name__ == "__main__":
     task = comm_args.task
     warmup_steps = comm_args.warmup_steps
     total_steps = comm_args.num_steps_per_iter * comm_args.max_iters
+    batch_size = comm_args.batch_size
     def lr_warmup_decay(steps):
         if steps < warmup_steps:
             # linear warmup
@@ -35,13 +38,16 @@ if __name__ == "__main__":
 
     if "train" == task:
         # prepare model
-        model = ImageBeit(num_actions=0) # TODO dataset
-        model = model.to(device=comm_args.device)
+        model = ImageBeit(num_actions=18) # TODO dataset
+        # model = model.to(device=device)
         # prepare optimizer
         optimizer = torch.optim.AdamW(model.parameters(), lr=comm_args.learning_rate, weight_decay=comm_args.weight_decay)
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_warmup_decay)
+        # get data loader
+        dataloader = MspacmanDataProvider(DATA_DIR, GameName.ATARI_MSPACMAN, batch_size=batch_size)
+
         # get trainer
-        trainer = Trainer(model=model, optimizer=optimizer, lr_scheduler=scheduler)
+        trainer = Trainer(model=model, batch_size=batch_size, optimizer=optimizer, lr_scheduler=scheduler, training_data_provider=dataloader)
         trainer.train(n_iters=comm_args.max_iters)
 
     elif "eval" == task:
