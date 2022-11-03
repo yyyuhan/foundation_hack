@@ -21,6 +21,7 @@ def test_dataloader():
     assert state_batch.shape == (batch_size, 3, 210, 160)
     assert action_batch.shape == (batch_size,)
 
+
 # pytest -s tests/test_dataloader.py::test_data_transform
 def test_data_transform():
     batch_size = 128

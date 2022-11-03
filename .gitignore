@@ -1,3 +1,5 @@
 *.tar.gz
 *__pycache__*
 *atari_v1*
+*checkpoint*
+nohup.out

@@ -16,3 +16,18 @@ def find_traj_frame_ids(idx, acc_traj_map, sorted_keys=None):
     traj_idx = acc_traj_map[sorted_keys[key_idx]]
     frame_idx = idx - prev_frames
     return traj_idx, frame_idx
+
+
+def save_checkpoint(model, name, path_to_save="checkpoints"):
+    from torch import save
+
+    raw_model = model.module if hasattr(model, "module") else model
+    print(f"===saving checkpoint to {path_to_save}")
+    save(raw_model.state_dict(), f"{path_to_save}/{name}.pt")
+
+
+def load_checkpoint(model_path):
+    from torch import load, load_state_dict
+
+    model_path = model_path + ".pt"
+    return load_state_dict(load(model_path))

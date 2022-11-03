@@ -3,15 +3,24 @@ import time
 import torch
 from tqdm import tqdm
 
-from src.utils.comm_util import get_device
+from src.utils.comm_util import load_checkpoint, save_checkpoint
+from src.utils.types import Constants
 
 
 class Trainer:
     def __init__(
-        self, model, optimizer, batch_size, training_data_provider, validation_data_provider=None, lr_scheduler=None, eval_fns=[]
+        self,
+        model,
+        optimizer=None,
+        batch_size=None,
+        training_data_provider=None,
+        validation_data_provider=None,
+        lr_scheduler=None,
+        device="cpu",
+        eval_fns=[],
     ):
-        self.device = get_device()
-        self.model = model
+        self.device = device
+        self.model = model.to(device)
         self.optim = optimizer
         self.batch_size = batch_size
         self.training_data_provider = training_data_provider
@@ -26,13 +35,16 @@ class Trainer:
             state_batch, action_batch = self.training_data_provider.get_batch()
             # state_batch, action_batch = state_batch.to(self.device), action_batch.to(self.device)
             # required by BEiT: we must pass list[tensor] as input
-            state_batch = [state for state in state_batch[:]]
-            # action_batch = action_batch.to(self.device)
+            state_batch = [state.to(self.device) for state in state_batch[:]]
+            action_batch = action_batch.to(self.device)
             self.model.train()  # training mode
             batch = (state_batch, action_batch)
             loss_ep = self.train_iteration(batch)
             results_iter[iter] = loss_ep.detach().cpu().item()
             print(f"loss: {results_iter}")
+
+            if 0 == iter % Constants.CHECKPOINT_FREQUENCY:
+                save_checkpoint(self.model, f"bc_{iter}")
 
         dur = time.perf_counter() - begin_time
         print(f"===training timecost: {dur}")
@@ -44,7 +56,6 @@ class Trainer:
         state_batch, real_action_batch = batch
         pred_action_batch = self.model(state_batch)  # feed the state batch into our model
         loss = self.model.loss_on_batch(pred_action_batch, real_action_batch)
-        self.optim.zero_grad()
         loss.backward()
         # update parameters
         self.optim.step()
@@ -66,6 +77,11 @@ class Trainer:
             n_batch += 1
             pbar.set_description(f"train loss: {loss_ep/n_batch:.4f}")
         return loss_ep
+
+    def pred_action(self, state):
+        logits = self.model([state])
+        preds = torch.argmax(logits, dim=-1)
+        return preds
 
     # Do a training iteration:
     # 1) Evaluate the model through the pre-supplied eval functions.

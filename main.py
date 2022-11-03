@@ -1,3 +1,4 @@
+from src.env.atari_env import AtariEnv
 from tests.test_dataloader import DATA_DIR
 from src.pipeline.load_atari import MspacmanDataProvider
 from src.models.beit import ImageBeit
@@ -8,7 +9,7 @@ from src.training.trainer import Trainer
 import torch
 import math
 
-from src.utils.comm_util import get_device
+from src.utils.comm_util import get_device, load_checkpoint
 
 def parse_cmd_args():
     arg_parser = common_arg_parser()
@@ -26,6 +27,7 @@ if __name__ == "__main__":
     warmup_steps = comm_args.warmup_steps
     total_steps = comm_args.num_steps_per_iter * comm_args.max_iters
     batch_size = comm_args.batch_size
+    checkpoint = comm_args.model
     def lr_warmup_decay(steps):
         if steps < warmup_steps:
             # linear warmup
@@ -38,8 +40,7 @@ if __name__ == "__main__":
 
     if "train" == task:
         # prepare model
-        model = ImageBeit(num_actions=18) # TODO dataset
-        # model = model.to(device=device)
+        model = ImageBeit(num_actions=18, device=device) # TODO dataset
         # prepare optimizer
         optimizer = torch.optim.AdamW(model.parameters(), lr=comm_args.learning_rate, weight_decay=comm_args.weight_decay)
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_warmup_decay)
@@ -47,9 +48,21 @@ if __name__ == "__main__":
         dataloader = MspacmanDataProvider(DATA_DIR, GameName.ATARI_MSPACMAN, batch_size=batch_size)
 
         # get trainer
-        trainer = Trainer(model=model, batch_size=batch_size, optimizer=optimizer, lr_scheduler=scheduler, training_data_provider=dataloader)
+        trainer = Trainer(model=model, batch_size=batch_size, optimizer=optimizer, lr_scheduler=scheduler, training_data_provider=dataloader, device=device)
         trainer.train(n_iters=comm_args.max_iters)
 
+    elif "rollout" == task:
+        if not checkpoint:
+            raise ValueError(f"invalid checkpoint param for rollout task")
+        # load model
+        model = load_checkpoint(model_path=checkpoint)
+        trainer = Trainer(model=model)
+        env = AtariEnv()
+        state = env.reset()
+        for s in comm_args.total_steps:
+            action = trainer.pred_action()
+            state, _, _, _ = env.step(action)
+        
     elif "eval" == task:
         pass
     else:

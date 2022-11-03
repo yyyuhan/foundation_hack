@@ -5,19 +5,23 @@ from transformers import BeitFeatureExtractor, BeitModel
 
 
 class ImageBeit(nn.Module):
-    def __init__(self, num_actions=0, input_channels=3) -> None:
+    def __init__(self, num_actions=0, device="cpu") -> None:
         super().__init__()
-        self.fc1 = nn.Linear(768, 512)
-        self.fc2 = nn.Linear(512, num_actions)
+        self.fc1 = nn.Linear(768, 384)
+        self.fc2 = nn.Linear(384, num_actions)
 
         self.loss_fn = nn.CrossEntropyLoss()
 
         self.beit_feature_extractor = BeitFeatureExtractor.from_pretrained("microsoft/beit-base-patch16-224-pt22k")
         self.beit_model = BeitModel.from_pretrained("microsoft/beit-base-patch16-224-pt22k")
+        self.device = device
+        # num_params = sum(param.numel() for param in self.beit_model.parameters())
+        # 85.6m
 
     def forward(self, x):
         # x: a list of tensor (3*H*W)
         x = self.beit_feature_extractor(x, return_tensors="pt")
+        x.to(self.device)
         with torch.no_grad():
             x = self.beit_model(**x).last_hidden_state  # the size is always (b*197*768)
         x = x[

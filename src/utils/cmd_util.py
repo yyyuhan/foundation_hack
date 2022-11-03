@@ -13,7 +13,7 @@ def common_arg_parser():
     # parser.add_argument("-d", "--daemon", dest="daemon", action="store_true", help="run in daemon mode")
     # parser.add_argument("--conf_file", help="config file name", type=str)
     parser.add_argument("--log_path", help="directory to save logs", type=str, default=None, required=False)
-    # parser.add_argument("--prev_model", help="continue training from a previous trained model", type=str, default="")
+    parser.add_argument("--model", help="continue training from a previously trained model", type=str, default="")
     parser.add_argument("--max_epsteps", help="maximum steps for each episode", type=int, default=None, required=False)
     parser.add_argument("--warmup_steps", help="warmup steps", type=int, default=10000, required=False)
     parser.add_argument("--learning_rate", "-lr", type=float, default=1e-4)
