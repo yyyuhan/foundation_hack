@@ -1,8 +1,8 @@
-from src.models.beit import ImageBeit
 from src.env.atari_env import AtariEnv
+from src.models.beit import ImageBeit
 from src.training.trainer import Trainer
-from src.utils.types import GameName
 from src.utils.comm_util import get_device
+from src.utils.types import GameName
 
 
 # pytest -s tests/test_rollout.py::test_env

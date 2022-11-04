@@ -1,1 +1,1 @@
-python main.py --task rollout --model checkpoints/bc_900.pt
+python main.py --task rollout --model checkpoints/bc_1000.pt

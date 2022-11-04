@@ -26,10 +26,20 @@ def save_checkpoint(model, name, path_to_save="checkpoints"):
     save(raw_model.state_dict(), f"{path_to_save}/{name}.pt")
 
 
-# def load_checkpoint(model, model_path):
-#     from torch import load
-#     import torch.nn as nn
+def gen_traj_video(dir, video_idx, frame_list=[]):
+    from os.path import abspath, join
 
-#     model_path = model_path + ".pt"
-#     print(type(load(model_path)))
-#     model.load_state_dict(state_dict=load(model_path))
+    import numpy as np
+    from cv2 import VideoWriter, VideoWriter_fourcc, resize
+
+    assert len(frame_list) > 0
+    image_width, image_height, _ = frame_list[0].shape
+    video_fps = 15
+    video_path = join(abspath(dir), f"video_{video_idx}.mp4")
+    recorder = VideoWriter(video_path, VideoWriter_fourcc(*"mp4v"), video_fps, (image_height, image_width))
+    for f in frame_list:
+        # vidout = resize(f, (image_width, image_height))
+        # recorder.write(vidout)
+        recorder.write(np.uint8(f))
+
+    recorder.release()

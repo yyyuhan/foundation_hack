@@ -9,7 +9,7 @@ from src.training.trainer import Trainer
 import torch
 import math
 
-from src.utils.comm_util import get_device
+from src.utils.comm_util import gen_traj_video, get_device
 
 def parse_cmd_args():
     arg_parser = common_arg_parser()
@@ -62,12 +62,17 @@ if __name__ == "__main__":
         trainer = Trainer(model=model, device=device)
         env = AtariEnv(game=GameName.ATARI_MSPACMAN)
         state, _ = env.reset()
-        import matplotlib.pyplot as plt
+        frame_list = []
+        traj_no = 0
         for s in range(total_steps):
+            frame_list.append(state)
             action = trainer.pred_action(state)
             state, _, done, _, _ = env.step(action)
-            env.render('rgb_array')
-
+            if done:
+                gen_traj_video("rollouts", traj_no, frame_list)
+                frame_list.clear()
+                traj_no += 1
+                state, _ = env.reset()
 
     elif "eval" == task:
         pass
